@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 from autogen_ext.models.openai import OpenAIChatCompletionClient, AzureOpenAIChatCompletionClient
 from autogen_ext.teams.magentic_one import MagenticOne
 from autogen_ext.code_executors.local import LocalCommandLineCodeExecutor
-from datetime import date, timedelta
-
 
 load_dotenv()
 
@@ -100,15 +98,15 @@ async def collect_results(user_prompt: str, USE_AOAI, model_name=None):
     return results
 
 def main():
-    st.title('🧠🤖 AI Flight Ticket Finder')
-    st.write("Get an AI Agent to search for the best flight ticket prices on PriceBreaker! Just enter your travel dates and airports below and let our smart assistant do the heavy lifting.")
+    st.title('🧠🤖 Magentic-One Demo')
+    st.write('Implementation using Autogen and Streamlit')
 
     st.sidebar.title('Settings')
     USE_AOAI = st.sidebar.checkbox("Use Azure OpenAI", value=True)
 
     if(USE_AOAI):
         aoai_model_options = ["gpt-4o", "gpt-4o-mini", "o3-mini"]
-        selected_model = st.sidebar.selectbox("Select Model", aoai_model_options, index=2)
+        selected_model = st.sidebar.selectbox("Select Model", aoai_model_options)
 
     if 'output' not in st.session_state:
         st.session_state.output = None
@@ -116,41 +114,12 @@ def main():
         st.session_state.prompt_token = 0
         st.session_state.completion_token = 0
 
-    # prompt = st.text_input('What is the task today?', value='')
-    prompt = ""
+    prompt = st.text_input('What is the task today?', value='')
 
-    st.markdown("---")
-    st.subheader("Compare Flight Ticket Prices from PriceBreaker")
-    departure_date = st.date_input('Departure Date', value=date.today() + timedelta(days=7))
-    return_date = st.date_input('Return Date', value=date.today() + timedelta(days=8))
-    departure_airport = st.text_input('Departure Airport', value='SIN')
-    return_airport = st.text_input('Return Airport', value='KUL')
-
-    # New Input Variables
-    no_of_pax = st.number_input("No. of Pax", min_value=1, value=1, step=1)
-    preferred_airline = st.text_input("Preferred Airline", value="")
-    travel_class = st.selectbox("Class", options=["Economy", "Premium Economy", "Business", "First"])
-
-    if st.button("Run"):
-        customized_prompt = f"""
-        Here's a sample of pricebreaker.travel website url, read the url query and make changes accordingly.
-        Sample url: "https://www.pricebreaker.travel/flights?source=webconnect&od1.origin_airport.code=SIN&od1.origin_datetime=2026-03-08&od2.origin_datetime=2026-03-11&ptc_adt=1&ptc_cnn=0&ptc_inf=0&cabin=Y&od2.origin_airport.code=ICN"
-        Now, help me craft the full url where the travel date is from {departure_date} to {return_date}, from {departure_airport} to {return_airport}. 
-        Passengers: {no_of_pax}. Preferred Airline: {preferred_airline if preferred_airline else 'Any'}. Class: {travel_class}.
-        Then, use websurfer to browse the site where the url is created above, and list down the price for each option. 
-        Ensure you scroll through the entire page by scrolling down too. Tell me which option is the best based on the list.
-        """
-        st.session_state.prompt = customized_prompt
+    if st.button('Execute'):
         st.write(f"**Task is submitted with {selected_model} model.**")
-        results = asyncio.run(collect_results(st.session_state.prompt, USE_AOAI, selected_model))
+        results = asyncio.run(collect_results(prompt, USE_AOAI, selected_model))
         st.session_state.elapsed = results[-1][1] if results[-1] is not None else None
-    else:
-        st.session_state.prompt = prompt
-
-    # if st.button('Execute'):
-    #     st.write(f"**Task is submitted with {selected_model} model.**")
-    #     results = asyncio.run(collect_results(prompt, USE_AOAI, selected_model))
-    #     st.session_state.elapsed = results[-1][1] if results[-1] is not None else None
 
     if st.session_state.elapsed is not None:
         st.write(f"**Prompt tokens: {st.session_state.prompt_token}**")
